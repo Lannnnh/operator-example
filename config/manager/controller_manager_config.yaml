@@ -8,4 +8,4 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: 6f1d8683.my.domain
+  resourceName: 6073c8ac.tutorial.kubebuilder.io

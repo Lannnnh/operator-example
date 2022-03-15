@@ -1,16 +1,16 @@
-domain: my.domain
+domain: tutorial.kubebuilder.io
 layout:
 - go.kubebuilder.io/v3
 projectName: operator-example
-repo: github.com/Lannnnh/operator-example
+repo: github.com/Lannnnh/mini-controller-manager
 resources:
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: my.domain
-  group: webapp
-  kind: Guestbook
-  path: github.com/Lannnnh/operator-example/api/v1
+  domain: tutorial.kubebuilder.io
+  group: batch
+  kind: CronJob
+  path: github.com/Lannnnh/mini-controller-manager/api/v1
   version: v1
 version: "3"

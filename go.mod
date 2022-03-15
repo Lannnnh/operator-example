@@ -1,4 +1,4 @@
-module github.com/Lannnnh/operator-example
+module github.com/Lannnnh/mini-controller-manager
 
 go 1.17
 
