@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	batchv1 "github.com/Lannnnh/mini-controller-manager/api/v1"
-	"github.com/Lannnnh/mini-controller-manager/controllers"
+	batchv1 "github.com/Lannnnh/operator-example/api/v1"
+	"github.com/Lannnnh/operator-example/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
