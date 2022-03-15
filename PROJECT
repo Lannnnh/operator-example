@@ -1,0 +1,16 @@
+domain: my.domain
+layout:
+- go.kubebuilder.io/v3
+projectName: operator-example
+repo: github.com/Lannnnh/operator-example
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: my.domain
+  group: webapp
+  kind: Guestbook
+  path: github.com/Lannnnh/operator-example/api/v1
+  version: v1
+version: "3"
