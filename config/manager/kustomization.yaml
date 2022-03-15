@@ -13,3 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: hkccr.ccs.tencentyun.com/lan4h_container/cronjob
+  newTag: 0.0.1
