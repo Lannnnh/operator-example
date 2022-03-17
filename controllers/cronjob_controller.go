@@ -76,16 +76,7 @@ type CronJobReconciler struct {
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	/*
-		### 1: Load the CronJob by name
-		We'll fetch the CronJob using our client.  All client methods take a
-		context (to allow for cancellation) as their first argument, and the object
-		in question as their last.  Get is a bit special, in that it takes a
-		[`NamespacedName`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client?tab=doc#ObjectKey)
-		as the middle argument (most don't have a middle argument, as we'll see
-		below).
-		Many client methods also take variadic options at the end.
-	*/
+	// 1. 加载 CronJob
 	var cronJob batchv1.CronJob
 	if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
@@ -95,12 +86,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	/*
-		### 2: List all active jobs, and update the status
-		To fully update our status, we'll need to list all child jobs in this namespace that belong to this CronJob.
-		Similarly to Get, we can use the List method to list the child jobs.  Notice that we use variadic options to
-		set the namespace and field match (which is actually an index lookup that we set up below).
-	*/
+	// 2. 列出所有 active Jobs，并且根据状态分类
 	var childJobs kbatch.JobList
 	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child Jobs")
@@ -229,13 +215,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	/*
-		Once we've updated our status, we can move on to ensuring that the status of
-		the world matches what we want in our spec.
-		### 3: Clean up old jobs according to the history limit
-		First, we'll try to clean up old jobs, so that we don't leave too many lying
-		around.
-	*/
+	// 3. 根据历史记录清理一些 Old Jobs
 
 	// NB: deleting these is "best effort" -- if we fail on a particular one,
 	// we won't requeue just to finish the deleting.
@@ -277,22 +257,14 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
-	/* ### 4: Check if we're suspended
-	If this object is suspended, we don't want to run any jobs, so we'll stop now.
-	This is useful if something's broken with the job we're running and we want to
-	pause runs to investigate or putz with the cluster, without deleting the object.
-	*/
+	// 4. 检查 Cronjob 是否已经被挂起了，挂起直接返回
 
 	if cronJob.Spec.Suspend != nil && *cronJob.Spec.Suspend {
 		log.V(1).Info("cronjob suspended, skipping")
 		return ctrl.Result{}, nil
 	}
 
-	/*
-		### 5: Get the next scheduled run
-		If we're not paused, we'll need to calculate the next scheduled run, and whether
-		or not we've got a run that we haven't processed yet.
-	*/
+	// 5. 获取下一次计划执行的 Job
 
 	/*
 		We'll calculate the next scheduled time using our helpful cron library.
@@ -374,10 +346,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	scheduledResult := ctrl.Result{RequeueAfter: nextRun.Sub(r.Now())} // save this so we can re-use it elsewhere
 	log = log.WithValues("now", r.Now(), "next run", nextRun)
 
-	/*
-		### 6: Run a new job if it's on schedule, not past the deadline, and not blocked by our concurrency policy
-		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
-	*/
+	// 6. 运行新的 Job, 确定新 Job 没有超过 deadline 时间，且不会被我们 concurrency 规则 block
 	if missedRun.IsZero() {
 		log.V(1).Info("no upcoming scheduled times, sleeping until next")
 		return scheduledResult, nil
@@ -475,13 +444,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	log.V(1).Info("created Job for CronJob run", "job", job)
 
-	/*
-		### 7: Requeue when we either see a running job or it's time for the next scheduled run
-		Finally, we'll return the result that we prepped above, that says we want to requeue
-		when our next run would need to occur.  This is taken as a maximum deadline -- if something
-		else changes in between, like our job starts or finishes, we get modified, etc, we might
-		reconcile again sooner.
-	*/
+	// 7. 如果 Job 正在运行或者它应该下次运行
 	// we'll requeue once we see the running job, and update our status
 	return scheduledResult, nil
 }
